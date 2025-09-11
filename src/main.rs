@@ -6,6 +6,8 @@ use std::io::{self, Write};
 enum Token {
     LeftParen,
     RightParen,
+    LeftBrace,
+    RightBrace,
 }
 
 impl fmt::Display for Token {
@@ -13,6 +15,8 @@ impl fmt::Display for Token {
         match self {
             Token::LeftParen => write!(f, "LEFT_PAREN ( null"),
             Token::RightParen => write!(f, "RIGHT_PAREN ) null"),
+            Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
+            Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
         }
     }
 }
@@ -52,6 +56,8 @@ fn interpret_tokens(tokens: String) {
         let token = match token {
             '(' => Token::LeftParen,
             ')' => Token::RightParen,
+            '{' => Token::LeftBrace,
+            '}' => Token::RightBrace,
             _ => unimplemented!(),
         };
         println!("{}", token);
