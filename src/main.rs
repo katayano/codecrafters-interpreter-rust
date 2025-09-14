@@ -53,13 +53,17 @@ fn main() {
                 std::process::exit(1);
             });
 
+            let mut exit_code = 0;
             for (i, line_content) in BufReader::new(file).lines().enumerate() {
                 if let Ok(content) = line_content {
-                    interpret_tokens(i + 1, content);
-                } else {
-                    println!("EOF  null");
+                    exit_code = interpret_tokens(i + 1, content);
+                    if exit_code != 0 {
+                        break;
+                    }
                 }
             }
+            println!("EOF  null");
+            std::process::exit(exit_code);
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
@@ -69,7 +73,14 @@ fn main() {
 }
 
 /// Interpreter that processes tokens and prints them.
-fn interpret_tokens(line_number: usize, tokens: String) {
+/// # Arguments
+/// * `line_number` - The current line number being processed.
+/// * `tokens` - A string containing the tokens to be interpreted.
+/// # Returns
+/// * `i32` - Returns exit code
+/// Exits with code 65 on lexical error.
+fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
+    let mut exit_code = 0;
     for token in tokens.chars() {
         let token = match token {
             ',' => Token::Comma,
@@ -91,9 +102,11 @@ fn interpret_tokens(line_number: usize, tokens: String) {
                     token
                 )
                 .unwrap();
+                exit_code = 65;
                 continue;
             }
         };
         println!("{}", token);
     }
+    exit_code
 }
