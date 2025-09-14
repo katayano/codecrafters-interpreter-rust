@@ -1,7 +1,8 @@
 use std::env;
 use std::fmt;
-use std::fs;
-use std::io::{self, Write};
+use std::fs::File;
+use std::io::BufRead;
+use std::io::{self, BufReader, Write};
 
 enum Token {
     Comma,
@@ -47,15 +48,18 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
-                String::new()
+            let file = File::open(filename).unwrap_or_else(|_| {
+                writeln!(io::stderr(), "Failed to open file {}", filename).unwrap();
+                std::process::exit(1);
             });
 
-            if !file_contents.is_empty() {
-                interpret_tokens(file_contents);
+            for (i, line_content) in BufReader::new(file).lines().enumerate() {
+                if let Ok(content) = line_content {
+                    interpret_tokens(i + 1, content);
+                } else {
+                    println!("EOF  null");
+                }
             }
-            println!("EOF  null");
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
@@ -65,7 +69,7 @@ fn main() {
 }
 
 /// Interpreter that processes tokens and prints them.
-fn interpret_tokens(tokens: String) {
+fn interpret_tokens(line_number: usize, tokens: String) {
     for token in tokens.chars() {
         let token = match token {
             ',' => Token::Comma,
@@ -79,7 +83,16 @@ fn interpret_tokens(tokens: String) {
             ')' => Token::RightParen,
             '{' => Token::LeftBrace,
             '}' => Token::RightBrace,
-            _ => unimplemented!(),
+            _ => {
+                writeln!(
+                    io::stderr(),
+                    "[line {}] Error: Unexpected character: {}",
+                    line_number,
+                    token
+                )
+                .unwrap();
+                continue;
+            }
         };
         println!("{}", token);
     }
