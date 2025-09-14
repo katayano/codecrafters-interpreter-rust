@@ -4,6 +4,13 @@ use std::fs;
 use std::io::{self, Write};
 
 enum Token {
+    Comma,
+    Dot,
+    Minus,
+    Plus,
+    Semicolon,
+    Slash,
+    Star,
     LeftParen,
     RightParen,
     LeftBrace,
@@ -13,6 +20,13 @@ enum Token {
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Token::Comma => write!(f, "COMMA , null"),
+            Token::Dot => write!(f, "DOT . null"),
+            Token::Minus => write!(f, "MINUS - null"),
+            Token::Plus => write!(f, "PLUS + null"),
+            Token::Semicolon => write!(f, "SEMICOLON ; null"),
+            Token::Slash => write!(f, "SLASH / null"),
+            Token::Star => write!(f, "STAR * null"),
             Token::LeftParen => write!(f, "LEFT_PAREN ( null"),
             Token::RightParen => write!(f, "RIGHT_PAREN ) null"),
             Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
