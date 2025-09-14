@@ -68,6 +68,13 @@ fn main() {
 fn interpret_tokens(tokens: String) {
     for token in tokens.chars() {
         let token = match token {
+            ',' => Token::Comma,
+            '.' => Token::Dot,
+            '-' => Token::Minus,
+            '+' => Token::Plus,
+            ';' => Token::Semicolon,
+            '/' => Token::Slash,
+            '*' => Token::Star,
             '(' => Token::LeftParen,
             ')' => Token::RightParen,
             '{' => Token::LeftBrace,
