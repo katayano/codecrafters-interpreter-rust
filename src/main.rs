@@ -19,6 +19,7 @@ enum Token {
     LeftBrace,
     RightBrace,
     EqualEqual,
+    UnexpectedToken,
 }
 
 impl fmt::Display for Token {
@@ -37,6 +38,7 @@ impl fmt::Display for Token {
             Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
             Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
             Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
+            Token::UnexpectedToken => write!(f, ""),
         }
     }
 }
@@ -111,7 +113,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
                 )
                 .unwrap();
                 exit_code = 65;
-                continue;
+                Token::UnexpectedToken
             }
         };
 
@@ -130,6 +132,8 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
 
 fn print_tokens(tokens: &[Token]) {
     for token in tokens {
-        println!("{}", token);
+        if *token != Token::UnexpectedToken {
+            println!("{}", token);
+        }
     }
 }
