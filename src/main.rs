@@ -96,6 +96,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
 
     for token in tokens.chars() {
         let token = match token {
+            '!' => Token::Bang,
             ',' => Token::Comma,
             '.' => Token::Dot,
             '-' => Token::Minus,
