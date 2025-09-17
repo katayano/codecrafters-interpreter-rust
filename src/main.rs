@@ -6,6 +6,7 @@ use std::io::{self, BufReader, Write};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum Token {
+    Bang,
     Comma,
     Dot,
     Minus,
@@ -19,12 +20,14 @@ enum Token {
     LeftBrace,
     RightBrace,
     EqualEqual,
+    BangEqual,
     UnexpectedToken,
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Token::Bang => write!(f, "BANG ! null"),
             Token::Comma => write!(f, "COMMA , null"),
             Token::Dot => write!(f, "DOT . null"),
             Token::Minus => write!(f, "MINUS - null"),
@@ -38,6 +41,7 @@ impl fmt::Display for Token {
             Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
             Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
             Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
+            Token::BangEqual => write!(f, "BANG_EQUAL != null"),
             Token::UnexpectedToken => write!(f, ""),
         }
     }
@@ -121,6 +125,10 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             Token::Equal if token_list.last() == Some(&Token::Equal) => {
                 token_list.pop();
                 token_list.push(Token::EqualEqual);
+            }
+            Token::Equal if token_list.last() == Some(&Token::Bang) => {
+                token_list.pop();
+                token_list.push(Token::BangEqual);
             }
             _ => token_list.push(token),
         }
