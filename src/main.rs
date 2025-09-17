@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum Token {
     Comma,
     Dot,
@@ -12,10 +13,12 @@ enum Token {
     Semicolon,
     Slash,
     Star,
+    Equal,
     LeftParen,
     RightParen,
     LeftBrace,
     RightBrace,
+    EqualEqual,
 }
 
 impl fmt::Display for Token {
@@ -28,10 +31,12 @@ impl fmt::Display for Token {
             Token::Semicolon => write!(f, "SEMICOLON ; null"),
             Token::Slash => write!(f, "SLASH / null"),
             Token::Star => write!(f, "STAR * null"),
+            Token::Equal => write!(f, "EQUAL = null"),
             Token::LeftParen => write!(f, "LEFT_PAREN ( null"),
             Token::RightParen => write!(f, "RIGHT_PAREN ) null"),
             Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
             Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
+            Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
         }
     }
 }
@@ -81,6 +86,8 @@ fn main() {
 /// Exits with code 65 on lexical error.
 fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
     let mut exit_code = 0;
+    let mut token_list = Vec::new();
+
     for token in tokens.chars() {
         let token = match token {
             ',' => Token::Comma,
@@ -90,6 +97,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             ';' => Token::Semicolon,
             '/' => Token::Slash,
             '*' => Token::Star,
+            '=' => Token::Equal,
             '(' => Token::LeftParen,
             ')' => Token::RightParen,
             '{' => Token::LeftBrace,
@@ -106,7 +114,22 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
                 continue;
             }
         };
+
+        match token {
+            Token::Equal if token_list.last() == Some(&Token::Equal) => {
+                token_list.pop();
+                token_list.push(Token::EqualEqual);
+            }
+            _ => token_list.push(token),
+        }
+    }
+    print_tokens(&token_list);
+
+    exit_code
+}
+
+fn print_tokens(tokens: &[Token]) {
+    for token in tokens {
         println!("{}", token);
     }
-    exit_code
 }
