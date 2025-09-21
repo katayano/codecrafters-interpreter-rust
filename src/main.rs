@@ -150,6 +150,8 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             Token::Slash if token_list.last() == Some(&Token::Slash) => {
                 token_list.pop();
                 token_list.push(Token::Comment);
+                // Ignore the rest of the line after a comment
+                break;
             }
             _ => token_list.push(token),
         }
