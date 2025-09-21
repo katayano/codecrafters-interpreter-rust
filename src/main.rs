@@ -15,6 +15,10 @@ enum Token {
     Slash,
     Star,
     Equal,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
     LeftParen,
     RightParen,
     LeftBrace,
@@ -36,6 +40,10 @@ impl fmt::Display for Token {
             Token::Slash => write!(f, "SLASH / null"),
             Token::Star => write!(f, "STAR * null"),
             Token::Equal => write!(f, "EQUAL = null"),
+            Token::Less => write!(f, "LESS < null"),
+            Token::LessEqual => write!(f, "LESS_EQUAL <= null"),
+            Token::Greater => write!(f, "GREATER > null"),
+            Token::GreaterEqual => write!(f, "GREATER_EQUAL >= null"),
             Token::LeftParen => write!(f, "LEFT_PAREN ( null"),
             Token::RightParen => write!(f, "RIGHT_PAREN ) null"),
             Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
@@ -105,6 +113,8 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             '/' => Token::Slash,
             '*' => Token::Star,
             '=' => Token::Equal,
+            '<' => Token::Less,
+            '>' => Token::Greater,
             '(' => Token::LeftParen,
             ')' => Token::RightParen,
             '{' => Token::LeftBrace,
@@ -123,14 +133,25 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
         };
 
         match token {
-            Token::Equal if token_list.last() == Some(&Token::Equal) => {
-                token_list.pop();
-                token_list.push(Token::EqualEqual);
-            }
-            Token::Equal if token_list.last() == Some(&Token::Bang) => {
-                token_list.pop();
-                token_list.push(Token::BangEqual);
-            }
+            Token::Equal => match token_list.last() {
+                Some(Token::Equal) => {
+                    token_list.pop();
+                    token_list.push(Token::EqualEqual);
+                }
+                Some(Token::Bang) => {
+                    token_list.pop();
+                    token_list.push(Token::BangEqual);
+                }
+                Some(Token::Less) => {
+                    token_list.pop();
+                    token_list.push(Token::LessEqual);
+                }
+                Some(Token::Greater) => {
+                    token_list.pop();
+                    token_list.push(Token::GreaterEqual);
+                }
+                _ => token_list.push(token),
+            },
             _ => token_list.push(token),
         }
     }
