@@ -25,6 +25,7 @@ enum Token {
     RightBrace,
     EqualEqual,
     BangEqual,
+    Comment,
     UnexpectedToken,
 }
 
@@ -50,6 +51,7 @@ impl fmt::Display for Token {
             Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
             Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
             Token::BangEqual => write!(f, "BANG_EQUAL != null"),
+            Token::Comment => write!(f, ""),
             Token::UnexpectedToken => write!(f, ""),
         }
     }
@@ -152,6 +154,10 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
                 }
                 _ => token_list.push(token),
             },
+            Token::Slash if token_list.last() == Some(&Token::Slash) => {
+                token_list.pop();
+                token_list.push(Token::Comment);
+            }
             _ => token_list.push(token),
         }
     }
@@ -162,8 +168,13 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
 
 fn print_tokens(tokens: &[Token]) {
     for token in tokens {
-        if *token != Token::UnexpectedToken {
-            println!("{}", token);
+        match token {
+            Token::UnexpectedToken => continue,
+            // Ignore any tokens after a comment
+            Token::Comment => break,
+            _ => {
+                println!("{}", token);
+            }
         }
     }
 }
