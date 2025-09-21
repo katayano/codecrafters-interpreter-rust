@@ -80,17 +80,16 @@ fn main() {
                 std::process::exit(1);
             });
 
-            let mut exit_code = 0;
+            let mut has_lexical_error = false;
             for (i, line_content) in BufReader::new(file).lines().enumerate() {
                 if let Ok(content) = line_content {
-                    exit_code = interpret_tokens(i + 1, content);
-                    if exit_code != 0 {
-                        break;
+                    if let Err(_) = interpret_tokens(i + 1, content) {
+                        has_lexical_error = true;
                     }
                 }
             }
             println!("EOF  null");
-            std::process::exit(exit_code);
+            std::process::exit(if has_lexical_error { 65 } else { 0 });
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
@@ -104,10 +103,9 @@ fn main() {
 /// * `line_number` - The current line number being processed.
 /// * `tokens` - A string containing the tokens to be interpreted.
 /// # Returns
-/// * `i32` - Returns exit code
-/// Exits with code 65 on lexical error.
-fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
-    let mut exit_code = 0;
+/// * `Result<(), ()>` - Returns Err(()) if there was a lexical error, Ok(()) otherwise.
+fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
+    let mut has_lexical_error = false;
     let mut token_list = Vec::new();
 
     for token in tokens.chars() {
@@ -131,7 +129,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             '\t' => Token::Tab,
             '\n' => Token::Newline,
             _ => {
-                exit_code = 65;
+                has_lexical_error = true;
                 Token::UnexpectedToken(line_number, token)
             }
         };
@@ -167,7 +165,11 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
     }
     print_tokens(&token_list);
 
-    exit_code
+    if has_lexical_error {
+        Err(())
+    } else {
+        Ok(())
+    }
 }
 
 fn print_tokens(tokens: &[Token]) {
