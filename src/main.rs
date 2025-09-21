@@ -25,6 +25,9 @@ enum Token {
     RightBrace,
     EqualEqual,
     BangEqual,
+    Space,
+    Tab,
+    Newline,
     Comment,
     UnexpectedToken(usize, char),
 }
@@ -51,6 +54,9 @@ impl fmt::Display for Token {
             Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
             Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
             Token::BangEqual => write!(f, "BANG_EQUAL != null"),
+            Token::Space => write!(f, ""),
+            Token::Tab => write!(f, ""),
+            Token::Newline => write!(f, ""),
             Token::Comment => write!(f, ""),
             Token::UnexpectedToken(_, _) => write!(f, ""),
         }
@@ -121,6 +127,9 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             ')' => Token::RightParen,
             '{' => Token::LeftBrace,
             '}' => Token::RightBrace,
+            ' ' => Token::Space,
+            '\t' => Token::Tab,
+            '\n' => Token::Newline,
             _ => {
                 exit_code = 65;
                 Token::UnexpectedToken(line_number, token)
@@ -173,9 +182,9 @@ fn print_tokens(tokens: &[Token]) {
                 )
                 .unwrap();
             }
-            Token::Comment => {
-                break;
-            }
+            Token::Comment => break,
+            // space and tab and newline are ignored
+            Token::Space | Token::Tab | Token::Newline => continue,
             _ => {
                 println!("{}", token);
             }
