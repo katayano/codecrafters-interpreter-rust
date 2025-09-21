@@ -167,7 +167,7 @@ fn print_tokens(tokens: &[Token]) {
             Token::UnexpectedToken(line_number, token) => {
                 writeln!(
                     io::stderr(),
-                    "[line {}] Error: Unexpected token: {}",
+                    "[line {}] Error: Unexpected character: {}",
                     line_number,
                     token
                 )
