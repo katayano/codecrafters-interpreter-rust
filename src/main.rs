@@ -26,7 +26,7 @@ enum Token {
     EqualEqual,
     BangEqual,
     Comment,
-    UnexpectedToken,
+    UnexpectedToken(usize, char),
 }
 
 impl fmt::Display for Token {
@@ -52,7 +52,7 @@ impl fmt::Display for Token {
             Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
             Token::BangEqual => write!(f, "BANG_EQUAL != null"),
             Token::Comment => write!(f, ""),
-            Token::UnexpectedToken => write!(f, ""),
+            Token::UnexpectedToken(_, _) => write!(f, ""),
         }
     }
 }
@@ -122,15 +122,8 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
             '{' => Token::LeftBrace,
             '}' => Token::RightBrace,
             _ => {
-                writeln!(
-                    io::stderr(),
-                    "[line {}] Error: Unexpected character: {}",
-                    line_number,
-                    token
-                )
-                .unwrap();
                 exit_code = 65;
-                Token::UnexpectedToken
+                Token::UnexpectedToken(line_number, token)
             }
         };
 
@@ -169,9 +162,18 @@ fn interpret_tokens(line_number: usize, tokens: String) -> i32 {
 fn print_tokens(tokens: &[Token]) {
     for token in tokens {
         match token {
-            Token::UnexpectedToken => continue,
-            // Ignore any tokens after a comment
-            Token::Comment => break,
+            Token::UnexpectedToken(line_number, token) => {
+                writeln!(
+                    io::stderr(),
+                    "[line {}] Error: Unexpected token: {}",
+                    line_number,
+                    token
+                )
+                .unwrap();
+            }
+            Token::Comment => {
+                break;
+            }
             _ => {
                 println!("{}", token);
             }
