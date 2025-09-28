@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 enum Token {
     Bang,
     Comma,
@@ -28,11 +28,14 @@ enum Token {
     Space,
     Tab,
     Newline,
+    StringLiterals(String),
     Comment,
     UnexpectedToken(usize, char),
+    UnterminatedString(usize),
 }
 
 impl fmt::Display for Token {
+    // String format is "<TOKEN_TYPE> <LEXEME> <LITERAL>"
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Bang => write!(f, "BANG ! null"),
@@ -58,7 +61,9 @@ impl fmt::Display for Token {
             Token::Tab => write!(f, ""),
             Token::Newline => write!(f, ""),
             Token::Comment => write!(f, ""),
+            Token::StringLiterals(str) => write!(f, "STRING \"{}\" {}", str, str),
             Token::UnexpectedToken(_, _) => write!(f, ""),
+            Token::UnterminatedString(_) => write!(f, ""),
         }
     }
 }
@@ -105,32 +110,43 @@ fn main() {
 /// # Returns
 /// * `Result<(), ()>` - Returns Err(()) if there was a lexical error, Ok(()) otherwise.
 fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
-    let mut has_lexical_error = false;
     let mut token_list = Vec::new();
 
+    let mut string_literal_tmp = String::new();
+
     for token in tokens.chars() {
-        let token = match token {
-            '!' => Token::Bang,
-            ',' => Token::Comma,
-            '.' => Token::Dot,
-            '-' => Token::Minus,
-            '+' => Token::Plus,
-            ';' => Token::Semicolon,
-            '/' => Token::Slash,
-            '*' => Token::Star,
-            '=' => Token::Equal,
-            '<' => Token::Less,
-            '>' => Token::Greater,
-            '(' => Token::LeftParen,
-            ')' => Token::RightParen,
-            '{' => Token::LeftBrace,
-            '}' => Token::RightBrace,
-            ' ' => Token::Space,
-            '\t' => Token::Tab,
-            '\n' => Token::Newline,
-            _ => {
-                has_lexical_error = true;
-                Token::UnexpectedToken(line_number, token)
+        let token = if token_list.last() == Some(&Token::UnterminatedString(line_number)) {
+            // If there is an unterminated string, keep appending characters until we find the closing quote
+            if token == '"' {
+                let string_literal = string_literal_tmp.clone();
+                string_literal_tmp.clear();
+                Token::StringLiterals(string_literal)
+            } else {
+                string_literal_tmp.push(token);
+                continue;
+            }
+        } else {
+            match token {
+                '!' => Token::Bang,
+                ',' => Token::Comma,
+                '.' => Token::Dot,
+                '-' => Token::Minus,
+                '+' => Token::Plus,
+                ';' => Token::Semicolon,
+                '/' => Token::Slash,
+                '*' => Token::Star,
+                '=' => Token::Equal,
+                '<' => Token::Less,
+                '>' => Token::Greater,
+                '(' => Token::LeftParen,
+                ')' => Token::RightParen,
+                '{' => Token::LeftBrace,
+                '}' => Token::RightBrace,
+                ' ' => Token::Space,
+                '\t' => Token::Tab,
+                '\n' => Token::Newline,
+                '"' => Token::UnterminatedString(line_number),
+                _ => Token::UnexpectedToken(line_number, token),
             }
         };
 
@@ -160,12 +176,21 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
                 // Ignore the rest of the line after a comment
                 break;
             }
+            Token::StringLiterals(_) => {
+                token_list.pop(); // Remove the UnterminatedString token
+                token_list.push(token);
+            }
             _ => token_list.push(token),
         }
     }
     print_tokens(&token_list);
 
-    if has_lexical_error {
+    if token_list.iter().any(|t| {
+        matches!(
+            t,
+            Token::UnexpectedToken(_, _) | Token::UnterminatedString(_)
+        )
+    }) {
         Err(())
     } else {
         Ok(())
@@ -181,6 +206,14 @@ fn print_tokens(tokens: &[Token]) {
                     "[line {}] Error: Unexpected character: {}",
                     line_number,
                     token
+                )
+                .unwrap();
+            }
+            Token::UnterminatedString(line_number) => {
+                writeln!(
+                    io::stderr(),
+                    "[line {}] Error: Unterminated string.",
+                    line_number
                 )
                 .unwrap();
             }
