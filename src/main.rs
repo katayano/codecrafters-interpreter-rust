@@ -192,7 +192,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
                 }
                 _ => token_list.push(token),
             },
-            Token::Slash if token_list.last() == Some(&Token::Slash) => {
+            Token::Slash if matches!(token_list.last(), Some(&Token::Slash)) => {
                 token_list.pop();
                 token_list.push(Token::Comment);
                 // Ignore the rest of the line after a comment
@@ -200,6 +200,12 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             }
             Token::StringLiterals(_) => {
                 token_list.pop(); // Remove the UnterminatedString token
+                token_list.push(token);
+            }
+            Token::NumberLiterals(_)
+                if matches!(token_list.last(), Some(Token::NumberLiterals(_))) =>
+            {
+                token_list.pop();
                 token_list.push(token);
             }
             _ => token_list.push(token),
