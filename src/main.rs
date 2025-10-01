@@ -63,12 +63,13 @@ impl fmt::Display for Token {
             Token::Newline => write!(f, ""),
             Token::Comment => write!(f, ""),
             Token::StringLiterals(str) => write!(f, "STRING \"{}\" {}", str, str),
-            Token::NumberLiterals(num) => {
-                if num.contains(".") {
-                    let num = num.parse::<f64>().unwrap();
-                    write!(f, "NUMBER {} {}", num, num)
+            Token::NumberLiterals(num_literal) => {
+                // For Example, "123" -> "123.0", "123.45" -> "123.45", "123.000" -> "123.0"
+                let num = num_literal.parse::<f64>().unwrap();
+                if num.to_string().contains(".") {
+                    write!(f, "NUMBER {} {}", num_literal, num)
                 } else {
-                    write!(f, "NUMBER {} {}.0", num, num)
+                    write!(f, "NUMBER {} {}.0", num_literal, num)
                 }
             }
             Token::UnexpectedToken(_, _) => write!(f, ""),
