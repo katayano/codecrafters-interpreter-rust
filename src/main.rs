@@ -65,6 +65,7 @@ impl fmt::Display for Token {
             Token::StringLiterals(str) => write!(f, "STRING \"{}\" {}", str, str),
             Token::NumberLiterals(num) => {
                 if num.contains(".") {
+                    let num = num.parse::<f64>().unwrap();
                     write!(f, "NUMBER {} {}", num, num)
                 } else {
                     write!(f, "NUMBER {} {}.0", num, num)
