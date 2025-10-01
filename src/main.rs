@@ -28,8 +28,9 @@ enum Token {
     Space,
     Tab,
     Newline,
-    StringLiterals(String),
     Comment,
+    StringLiterals(String),
+    NumberLiterals(String),
     UnexpectedToken(usize, char),
     UnterminatedString(usize),
 }
@@ -62,6 +63,13 @@ impl fmt::Display for Token {
             Token::Newline => write!(f, ""),
             Token::Comment => write!(f, ""),
             Token::StringLiterals(str) => write!(f, "STRING \"{}\" {}", str, str),
+            Token::NumberLiterals(num) => {
+                if num.contains(".") {
+                    write!(f, "NUMBER {} {}", num, num)
+                } else {
+                    write!(f, "NUMBER {} {}.0", num, num)
+                }
+            }
             Token::UnexpectedToken(_, _) => write!(f, ""),
             Token::UnterminatedString(_) => write!(f, ""),
         }
@@ -129,7 +137,14 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             match token {
                 '!' => Token::Bang,
                 ',' => Token::Comma,
-                '.' => Token::Dot,
+                '.' => {
+                    if let Some(Token::NumberLiterals(num)) = token_list.last() {
+                        let number_literal = format!("{}.", num);
+                        Token::NumberLiterals(number_literal)
+                    } else {
+                        Token::Dot
+                    }
+                }
                 '-' => Token::Minus,
                 '+' => Token::Plus,
                 ';' => Token::Semicolon,
@@ -145,6 +160,13 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
                 ' ' => Token::Space,
                 '\t' => Token::Tab,
                 '\n' => Token::Newline,
+                '0'..='9' => {
+                    let number_literal = match token_list.last() {
+                        Some(Token::NumberLiterals(num)) => format!("{}{}", num, token),
+                        _ => token.to_string(),
+                    };
+                    Token::NumberLiterals(number_literal)
+                }
                 '"' => Token::UnterminatedString(line_number),
                 _ => Token::UnexpectedToken(line_number, token),
             }
