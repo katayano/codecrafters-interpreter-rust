@@ -31,6 +31,7 @@ enum Token {
     Comment,
     StringLiterals(String),
     NumberLiterals(String),
+    Identifier(String),
     UnexpectedToken(usize, char),
     UnterminatedString(usize),
 }
@@ -72,6 +73,7 @@ impl fmt::Display for Token {
                     write!(f, "NUMBER {} {}.0", num_literal, num)
                 }
             }
+            Token::Identifier(id) => write!(f, "IDENTIFIER {} null", id),
             Token::UnexpectedToken(_, _) => write!(f, ""),
             Token::UnterminatedString(_) => write!(f, ""),
         }
@@ -162,12 +164,19 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
                 ' ' => Token::Space,
                 '\t' => Token::Tab,
                 '\n' => Token::Newline,
-                '0'..='9' => {
-                    let number_literal = match token_list.last() {
-                        Some(Token::NumberLiterals(num)) => format!("{}{}", num, token),
+                '0'..='9' => match token_list.last() {
+                    Some(Token::NumberLiterals(num)) => {
+                        Token::NumberLiterals(format!("{}{}", num, token))
+                    }
+                    Some(Token::Identifier(id)) => Token::Identifier(format!("{}{}", id, token)),
+                    _ => Token::NumberLiterals(token.to_string()),
+                },
+                'a'..='z' | 'A'..='Z' | '_' => {
+                    let identifier = match token_list.last() {
+                        Some(Token::Identifier(id)) => format!("{}{}", id, token),
                         _ => token.to_string(),
                     };
-                    Token::NumberLiterals(number_literal)
+                    Token::Identifier(identifier)
                 }
                 '"' => Token::UnterminatedString(line_number),
                 _ => Token::UnexpectedToken(line_number, token),
@@ -207,6 +216,10 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             Token::NumberLiterals(_)
                 if matches!(token_list.last(), Some(Token::NumberLiterals(_))) =>
             {
+                token_list.pop();
+                token_list.push(token);
+            }
+            Token::Identifier(_) if matches!(token_list.last(), Some(Token::Identifier(_))) => {
                 token_list.pop();
                 token_list.push(token);
             }
