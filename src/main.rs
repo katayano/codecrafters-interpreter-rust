@@ -217,12 +217,21 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             Token::NumberLiterals(_)
                 if matches!(token_list.last(), Some(Token::NumberLiterals(_))) =>
             {
-                token_list.pop();
+                token_list.pop(); // Remove the last number literal
                 token_list.push(token);
             }
-            Token::Identifier(_) if matches!(token_list.last(), Some(Token::Identifier(_))) => {
-                token_list.pop();
-                token_list.push(token);
+            Token::Identifier(ref id)
+                if matches!(token_list.last(), Some(Token::Identifier(_))) =>
+            {
+                token_list.pop(); // Remove the last identifier
+                token_list.push(
+                    // Check if the identifier is a reserved word
+                    if reserved_words::RESERVED_WORDS.contains(&id.as_str()) {
+                        Token::ReservedWord(id.to_string())
+                    } else {
+                        token
+                    },
+                );
             }
             _ => token_list.push(token),
         }
@@ -264,14 +273,6 @@ fn print_tokens(tokens: &[Token]) {
             Token::Comment => break,
             // space and tab and newline are ignored
             Token::Space | Token::Tab | Token::Newline => continue,
-            Token::Identifier(id) => {
-                // Check if the identifier is a reserved word
-                if reserved_words::RESERVED_WORDS.contains(&id.as_str()) {
-                    println!("{}", Token::ReservedWord(id.to_string()));
-                } else {
-                    println!("{}", token);
-                }
-            }
             _ => {
                 println!("{}", token);
             }
