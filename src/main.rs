@@ -4,6 +4,8 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
+mod reserved_words;
+
 #[derive(Debug, PartialEq, Clone)]
 enum Token {
     Bang,
@@ -29,6 +31,7 @@ enum Token {
     Tab,
     Newline,
     Comment,
+    ReservedWord(String),
     StringLiterals(String),
     NumberLiterals(String),
     Identifier(String),
@@ -63,6 +66,7 @@ impl fmt::Display for Token {
             Token::Tab => write!(f, ""),
             Token::Newline => write!(f, ""),
             Token::Comment => write!(f, ""),
+            Token::ReservedWord(word) => write!(f, "{} {} null", word.to_uppercase(), word),
             Token::StringLiterals(str) => write!(f, "STRING \"{}\" {}", str, str),
             Token::NumberLiterals(num_literal) => {
                 // For Example, "123" -> "123.0", "123.45" -> "123.45", "123.000" -> "123.0"
@@ -263,6 +267,14 @@ fn print_tokens(tokens: &[Token]) {
             Token::Comment => break,
             // space and tab and newline are ignored
             Token::Space | Token::Tab | Token::Newline => continue,
+            Token::Identifier(id) => {
+                // Check if the identifier is a reserved word
+                if reserved_words::RESERVED_WORDS.contains(&id.as_str()) {
+                    println!("{}", Token::ReservedWord(id.to_string()));
+                } else {
+                    println!("{}", token);
+                }
+            }
             _ => {
                 println!("{}", token);
             }
