@@ -136,11 +136,12 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             if token == '"' {
                 let string_literal = string_literal_tmp.clone();
                 string_literal_tmp.clear();
-                Token::StringLiterals(string_literal)
+                token_list.pop(); // Remove the UnterminatedString token
+                token_list.push(Token::StringLiterals(string_literal));
             } else {
                 string_literal_tmp.push(token);
-                continue;
             }
+            continue;
         } else {
             match token {
                 '!' => Token::Bang,
@@ -212,10 +213,6 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
                 token_list.push(Token::Comment);
                 // Ignore the rest of the line after a comment
                 break;
-            }
-            Token::StringLiterals(_) => {
-                token_list.pop(); // Remove the UnterminatedString token
-                token_list.push(token);
             }
             Token::NumberLiterals(_)
                 if matches!(token_list.last(), Some(Token::NumberLiterals(_))) =>
