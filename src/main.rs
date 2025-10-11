@@ -79,7 +79,6 @@ fn parse(filename: &str) {
             }
         }
     }
-    println!("EOF  null");
     std::process::exit(if has_lexical_error { 65 } else { 0 });
 }
 
