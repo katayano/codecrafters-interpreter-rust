@@ -10,6 +10,9 @@ mod tokenizer;
 
 use token::Token;
 
+const COMMAND_TOKENIZE: &str = "tokenize";
+const COMMAND_PARSE: &str = "parse";
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
@@ -26,10 +29,10 @@ fn main() {
     let filename = &args[2];
 
     match command.as_str() {
-        "tokenize" => {
+        COMMAND_TOKENIZE => {
             tokenize(filename);
         }
-        "parse" => {
+        COMMAND_PARSE => {
             parse(filename);
         }
         _ => {
@@ -51,9 +54,9 @@ fn tokenize(filename: &str) {
             let token_list = interpret_tokens(i + 1, content);
             if let Err(token_list) = token_list {
                 has_lexical_error = true;
-                print_tokens(&token_list, "tokenizer");
+                print_tokens(&token_list, COMMAND_TOKENIZE);
             } else {
-                print_tokens(&token_list.unwrap(), "tokenizer");
+                print_tokens(&token_list.unwrap(), COMMAND_TOKENIZE);
             }
         }
     }
@@ -73,12 +76,13 @@ fn parse(filename: &str) {
             let token_list = interpret_tokens(i + 1, content);
             if let Err(token_list) = token_list {
                 has_lexical_error = true;
-                print_tokens(&token_list, "parser");
+                print_tokens(&token_list, COMMAND_PARSE);
             } else {
-                print_tokens(&token_list.unwrap(), "parser");
+                print_tokens(&token_list.unwrap(), COMMAND_PARSE);
             }
         }
     }
+    // Don't print EOF for parser
     std::process::exit(if has_lexical_error { 65 } else { 0 });
 }
 
@@ -236,9 +240,9 @@ fn print_tokens(tokens: &[Token], printed_by: &str) {
             // space and tab and newline are ignored
             Token::Space | Token::Tab | Token::Newline => continue,
             _ => {
-                if printed_by == "tokenizer" {
+                if printed_by == COMMAND_TOKENIZE {
                     println!("{}", tokenizer::Tokenizer::from(token.clone()));
-                } else if printed_by == "parser" {
+                } else if printed_by == COMMAND_PARSE {
                     println!("{}", parser::Parser::from(token.clone()));
                 }
             }
