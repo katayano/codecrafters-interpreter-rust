@@ -1,93 +1,24 @@
 use std::env;
-use std::fmt;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
+mod parser;
 mod reserved_words;
+mod token;
+mod tokenizer;
 
-#[derive(Debug, PartialEq, Clone)]
-enum Token {
-    Bang,
-    Comma,
-    Dot,
-    Minus,
-    Plus,
-    Semicolon,
-    Slash,
-    Star,
-    Equal,
-    Less,
-    LessEqual,
-    Greater,
-    GreaterEqual,
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    EqualEqual,
-    BangEqual,
-    Space,
-    Tab,
-    Newline,
-    Comment,
-    ReservedWord(String),
-    StringLiterals(String),
-    NumberLiterals(String),
-    Identifier(String),
-    UnexpectedToken(usize, char),
-    UnterminatedString(usize),
-}
-
-impl fmt::Display for Token {
-    // String format is "<TOKEN_TYPE> <LEXEME> <LITERAL>"
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Token::Bang => write!(f, "BANG ! null"),
-            Token::Comma => write!(f, "COMMA , null"),
-            Token::Dot => write!(f, "DOT . null"),
-            Token::Minus => write!(f, "MINUS - null"),
-            Token::Plus => write!(f, "PLUS + null"),
-            Token::Semicolon => write!(f, "SEMICOLON ; null"),
-            Token::Slash => write!(f, "SLASH / null"),
-            Token::Star => write!(f, "STAR * null"),
-            Token::Equal => write!(f, "EQUAL = null"),
-            Token::Less => write!(f, "LESS < null"),
-            Token::LessEqual => write!(f, "LESS_EQUAL <= null"),
-            Token::Greater => write!(f, "GREATER > null"),
-            Token::GreaterEqual => write!(f, "GREATER_EQUAL >= null"),
-            Token::LeftParen => write!(f, "LEFT_PAREN ( null"),
-            Token::RightParen => write!(f, "RIGHT_PAREN ) null"),
-            Token::LeftBrace => write!(f, "LEFT_BRACE {{ null"),
-            Token::RightBrace => write!(f, "RIGHT_BRACE }} null"),
-            Token::EqualEqual => write!(f, "EQUAL_EQUAL == null"),
-            Token::BangEqual => write!(f, "BANG_EQUAL != null"),
-            Token::Space => write!(f, ""),
-            Token::Tab => write!(f, ""),
-            Token::Newline => write!(f, ""),
-            Token::Comment => write!(f, ""),
-            Token::ReservedWord(word) => write!(f, "{} {} null", word.to_uppercase(), word),
-            Token::StringLiterals(str) => write!(f, "STRING \"{}\" {}", str, str),
-            Token::NumberLiterals(num_literal) => {
-                // For Example, "123" -> "123.0", "123.45" -> "123.45", "123.000" -> "123.0"
-                let num = num_literal.parse::<f64>().unwrap();
-                if num.to_string().contains(".") {
-                    write!(f, "NUMBER {} {}", num_literal, num)
-                } else {
-                    write!(f, "NUMBER {} {}.0", num_literal, num)
-                }
-            }
-            Token::Identifier(id) => write!(f, "IDENTIFIER {} null", id),
-            Token::UnexpectedToken(_, _) => write!(f, ""),
-            Token::UnterminatedString(_) => write!(f, ""),
-        }
-    }
-}
+use token::Token;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
-        writeln!(io::stderr(), "Usage: {} tokenize <filename>", args[0]).unwrap();
+        writeln!(
+            io::stderr(),
+            "Usage: {} (tokenize | parse) <filename>",
+            args[0]
+        )
+        .unwrap();
         return;
     }
 
@@ -96,21 +27,10 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let file = File::open(filename).unwrap_or_else(|_| {
-                writeln!(io::stderr(), "Failed to open file {}", filename).unwrap();
-                std::process::exit(1);
-            });
-
-            let mut has_lexical_error = false;
-            for (i, line_content) in BufReader::new(file).lines().enumerate() {
-                if let Ok(content) = line_content {
-                    if let Err(_) = interpret_tokens(i + 1, content) {
-                        has_lexical_error = true;
-                    }
-                }
-            }
-            println!("EOF  null");
-            std::process::exit(if has_lexical_error { 65 } else { 0 });
+            tokenize(filename);
+        }
+        "parse" => {
+            parse(filename);
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
@@ -119,13 +39,57 @@ fn main() {
     }
 }
 
+fn tokenize(filename: &str) {
+    let file = File::open(filename).unwrap_or_else(|_| {
+        writeln!(io::stderr(), "Failed to open file {}", filename).unwrap();
+        std::process::exit(1);
+    });
+
+    let mut has_lexical_error = false;
+    for (i, line_content) in BufReader::new(file).lines().enumerate() {
+        if let Ok(content) = line_content {
+            let token_list = interpret_tokens(i + 1, content);
+            if let Err(token_list) = token_list {
+                has_lexical_error = true;
+                print_tokens(&token_list, "tokenizer");
+            } else {
+                print_tokens(&token_list.unwrap(), "tokenizer");
+            }
+        }
+    }
+    println!("EOF  null");
+    std::process::exit(if has_lexical_error { 65 } else { 0 });
+}
+
+fn parse(filename: &str) {
+    let file = File::open(filename).unwrap_or_else(|_| {
+        writeln!(io::stderr(), "Failed to open file {}", filename).unwrap();
+        std::process::exit(1);
+    });
+
+    let mut has_lexical_error = false;
+    for (i, line_content) in BufReader::new(file).lines().enumerate() {
+        if let Ok(content) = line_content {
+            let token_list = interpret_tokens(i + 1, content);
+            if let Err(token_list) = token_list {
+                has_lexical_error = true;
+                print_tokens(&token_list, "parser");
+            } else {
+                print_tokens(&token_list.unwrap(), "parser");
+            }
+        }
+    }
+    println!("EOF  null");
+    std::process::exit(if has_lexical_error { 65 } else { 0 });
+}
+
 /// Interpreter that processes tokens and prints them.
 /// # Arguments
 /// * `line_number` - The current line number being processed.
 /// * `tokens` - A string containing the tokens to be interpreted.
 /// # Returns
 /// * `Result<(), ()>` - Returns Err(()) if there was a lexical error, Ok(()) otherwise.
-fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
+fn interpret_tokens(line_number: usize, tokens: String) -> Result<Vec<Token>, Vec<Token>> {
     let mut token_list = Vec::new();
 
     let mut string_literal_tmp = String::new();
@@ -236,7 +200,6 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             _ => token_list.push(token),
         }
     }
-    print_tokens(&token_list);
 
     if token_list.iter().any(|t| {
         matches!(
@@ -244,13 +207,13 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<(), ()> {
             Token::UnexpectedToken(_, _) | Token::UnterminatedString(_)
         )
     }) {
-        Err(())
+        Err(token_list)
     } else {
-        Ok(())
+        Ok(token_list)
     }
 }
 
-fn print_tokens(tokens: &[Token]) {
+fn print_tokens(tokens: &[Token], printed_by: &str) {
     for token in tokens {
         match token {
             Token::UnexpectedToken(line_number, token) => {
@@ -274,7 +237,11 @@ fn print_tokens(tokens: &[Token]) {
             // space and tab and newline are ignored
             Token::Space | Token::Tab | Token::Newline => continue,
             _ => {
-                println!("{}", token);
+                if printed_by == "tokenizer" {
+                    println!("{}", tokenizer::Tokenizer::from(token.clone()));
+                } else if printed_by == "parser" {
+                    println!("{}", parser::Parser::from(token.clone()));
+                }
             }
         }
     }
