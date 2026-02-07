@@ -61,6 +61,7 @@ fn tokenize(filename: &str) {
             }
         }
     }
+    println!("EOF  null");
     std::process::exit(if has_lexical_error { 65 } else { 0 });
 }
 
@@ -203,7 +204,6 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<Vec<Token>, Ve
             _ => token_list.push(token),
         }
     }
-    token_list.push(Token::EOF);
 
     if token_list.iter().any(|t| {
         matches!(

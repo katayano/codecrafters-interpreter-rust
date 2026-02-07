@@ -41,11 +41,11 @@ impl Primary {
             Token::NumberLiterals(num_literal) => Primary::NumberLiterals(num_literal.clone()),
             Token::LeftParen => {
                 let primary = Primary::Expression(Box::new(Primary::new(
-                    tokens[1..tokens.len() - 2].to_vec(),
+                    tokens[1..tokens.len() - 1].to_vec(),
                 )));
 
                 // Expected RightParen
-                if let Token::RightParen = tokens[tokens.len() - 2] {
+                if let Token::RightParen = tokens[tokens.len() - 1] {
                     primary
                 } else {
                     panic!("Expected RightParen token");
