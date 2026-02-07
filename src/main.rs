@@ -3,13 +3,12 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
-mod expression;
-mod parser;
+mod primary;
 mod reserved_words;
 mod token;
 mod tokenizer;
 
-use expression::Expression;
+use primary::Primary;
 use token::Token;
 
 const COMMAND_TOKENIZE: &str = "tokenize";
@@ -62,7 +61,6 @@ fn tokenize(filename: &str) {
             }
         }
     }
-    println!("EOF  null");
     std::process::exit(if has_lexical_error { 65 } else { 0 });
 }
 
@@ -250,5 +248,5 @@ fn print_tokenize(tokens: &[Token]) {
 }
 
 fn print_parse(tokens: &[Token]) {
-    println!("{}", Expression::from(tokens.to_vec()));
+    println!("{}", Primary::new(tokens.to_vec()));
 }
