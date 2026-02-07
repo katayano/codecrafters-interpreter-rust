@@ -47,6 +47,7 @@ impl fmt::Display for Tokenizer {
             Token::Identifier(id) => write!(f, "IDENTIFIER {} null", id),
             Token::UnexpectedToken(_, _) => write!(f, ""),
             Token::UnterminatedString(_) => write!(f, ""),
+            Token::EOF => write!(f, "EOF null"),
         }
     }
 }

@@ -29,4 +29,5 @@ pub enum Token {
     Identifier(String),
     UnexpectedToken(usize, char),
     UnterminatedString(usize),
+    EOF,
 }

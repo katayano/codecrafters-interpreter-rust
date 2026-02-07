@@ -3,11 +3,13 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
+mod expression;
 mod parser;
 mod reserved_words;
 mod token;
 mod tokenizer;
 
+use expression::Expression;
 use token::Token;
 
 const COMMAND_TOKENIZE: &str = "tokenize";
@@ -54,9 +56,9 @@ fn tokenize(filename: &str) {
             let token_list = interpret_tokens(i + 1, content);
             if let Err(token_list) = token_list {
                 has_lexical_error = true;
-                print_tokens(&token_list, COMMAND_TOKENIZE);
+                print_tokenize(&token_list);
             } else {
-                print_tokens(&token_list.unwrap(), COMMAND_TOKENIZE);
+                print_tokenize(&token_list.unwrap());
             }
         }
     }
@@ -76,9 +78,9 @@ fn parse(filename: &str) {
             let token_list = interpret_tokens(i + 1, content);
             if let Err(token_list) = token_list {
                 has_lexical_error = true;
-                print_tokens(&token_list, COMMAND_PARSE);
+                print_parse(&token_list);
             } else {
-                print_tokens(&token_list.unwrap(), COMMAND_PARSE);
+                print_parse(&token_list.unwrap());
             }
         }
     }
@@ -203,6 +205,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<Vec<Token>, Ve
             _ => token_list.push(token),
         }
     }
+    token_list.push(Token::EOF);
 
     if token_list.iter().any(|t| {
         matches!(
@@ -216,7 +219,7 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<Vec<Token>, Ve
     }
 }
 
-fn print_tokens(tokens: &[Token], printed_by: &str) {
+fn print_tokenize(tokens: &[Token]) {
     for token in tokens {
         match token {
             Token::UnexpectedToken(line_number, token) => {
@@ -240,12 +243,12 @@ fn print_tokens(tokens: &[Token], printed_by: &str) {
             // space and tab and newline are ignored
             Token::Space | Token::Tab | Token::Newline => continue,
             _ => {
-                if printed_by == COMMAND_TOKENIZE {
-                    println!("{}", tokenizer::Tokenizer::from(token.clone()));
-                } else if printed_by == COMMAND_PARSE {
-                    println!("{}", parser::Parser::from(token.clone()));
-                }
+                println!("{}", tokenizer::Tokenizer::from(token.clone()));
             }
         }
     }
+}
+
+fn print_parse(tokens: &[Token]) {
+    println!("{}", Expression::from(tokens.to_vec()));
 }
