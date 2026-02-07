@@ -6,7 +6,6 @@ use std::io::{self, BufReader, Write};
 mod primary;
 mod reserved_words;
 mod token;
-mod tokenizer;
 
 use primary::Primary;
 use token::Token;
@@ -241,7 +240,7 @@ fn print_tokenize(tokens: &[Token]) {
             // space and tab and newline are ignored
             Token::Space | Token::Tab | Token::Newline => continue,
             _ => {
-                println!("{}", tokenizer::Tokenizer::from(token.clone()));
+                println!("{}", token.clone());
             }
         }
     }
