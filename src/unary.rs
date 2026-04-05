@@ -4,18 +4,28 @@ use crate::token::Token;
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Unary {
-    Minus(Box<Unary>),
-    Bang(Box<Unary>),
-    Primary(Primary),
+pub struct Unary {
+    operator: Option<Token>,
+    operand: Option<Box<Unary>>,
+    primary: Option<Primary>,
 }
 
 impl fmt::Display for Unary {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Unary::Minus(inner) => write!(f, "(- {})", inner),
-            Unary::Bang(inner) => write!(f, "(! {})", inner),
-            Unary::Primary(primary) => write!(f, "{}", primary),
+        if let Some(operator) = &self.operator {
+            if let Some(operand) = &self.operand {
+                match operator {
+                    Token::Minus => write!(f, "(- {})", operand),
+                    Token::Bang => write!(f, "(! {})", operand),
+                    _ => unreachable!(),
+                }
+            } else {
+                unreachable!()
+            }
+        } else if let Some(primary) = &self.primary {
+            write!(f, "{}", primary)
+        } else {
+            unreachable!()
         }
     }
 }
@@ -23,9 +33,16 @@ impl fmt::Display for Unary {
 impl Unary {
     pub fn new(tokens: Vec<Token>) -> Self {
         match &tokens[0] {
-            Token::Minus => Unary::Minus(Box::new(Unary::new(tokens[1..].to_vec()))),
-            Token::Bang => Unary::Bang(Box::new(Unary::new(tokens[1..].to_vec()))),
-            _ => Unary::Primary(Primary::new(tokens)),
+            Token::Minus | Token::Bang => Unary {
+                operator: Some(tokens[0].clone()),
+                operand: Some(Box::new(Unary::new(tokens[1..].to_vec()))),
+                primary: None,
+            },
+            _ => Unary {
+                operator: None,
+                operand: None,
+                primary: Some(Primary::new(tokens)),
+            },
         }
     }
 }
