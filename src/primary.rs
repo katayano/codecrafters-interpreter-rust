@@ -1,4 +1,4 @@
-use crate::token::Token;
+use crate::{expression::Expression, token::Token};
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -8,7 +8,7 @@ pub enum Primary {
     Nil,
     StringLiterals(String),
     NumberLiterals(String),
-    Expression(Box<Primary>),
+    Expression(Box<Expression>),
 }
 
 impl fmt::Display for Primary {
@@ -26,7 +26,7 @@ impl fmt::Display for Primary {
                     write!(f, "{}.0", num)
                 }
             }
-            Primary::Expression(content) => write!(f, "(group {})", content),
+            Primary::Expression(inner) => write!(f, "(group {})", inner),
         }
     }
 }
@@ -40,7 +40,7 @@ impl Primary {
             Token::StringLiterals(str) => Primary::StringLiterals(str.clone()),
             Token::NumberLiterals(num_literal) => Primary::NumberLiterals(num_literal.clone()),
             Token::LeftParen => {
-                let primary = Primary::Expression(Box::new(Primary::new(
+                let primary = Primary::Expression(Box::new(Expression::new(
                     tokens[1..tokens.len() - 1].to_vec(),
                 )));
 

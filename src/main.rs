@@ -3,12 +3,15 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
+mod expression;
 mod primary;
 mod reserved_words;
 mod token;
+mod unary;
 
-use primary::Primary;
 use token::Token;
+
+use crate::expression::Expression;
 
 const COMMAND_TOKENIZE: &str = "tokenize";
 const COMMAND_PARSE: &str = "parse";
@@ -247,5 +250,5 @@ fn print_tokenize(tokens: &[Token]) {
 }
 
 fn print_parse(tokens: &[Token]) {
-    println!("{}", Primary::new(tokens.to_vec()));
+    println!("{}", Expression::new(tokens.to_vec()));
 }
