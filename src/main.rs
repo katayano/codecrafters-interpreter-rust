@@ -3,15 +3,12 @@ use std::fs::File;
 use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
-mod expression;
-mod primary;
+mod parser;
 mod reserved_words;
 mod token;
-mod unary;
 
+use parser::Parser;
 use token::Token;
-
-use crate::expression::Expression;
 
 const COMMAND_TOKENIZE: &str = "tokenize";
 const COMMAND_PARSE: &str = "parse";
@@ -197,7 +194,12 @@ fn interpret_tokens(line_number: usize, tokens: String) -> Result<Vec<Token>, Ve
                 token_list.push(
                     // Check if the identifier is a reserved word
                     if reserved_words::RESERVED_WORDS.contains(&id.as_str()) {
-                        Token::ReservedWord(id.to_string())
+                        match id.as_str() {
+                            "true" => Token::True,
+                            "false" => Token::False,
+                            "nil" => Token::Nil,
+                            _ => Token::ReservedWord(id.to_string()),
+                        }
                     } else {
                         token
                     },
@@ -250,5 +252,11 @@ fn print_tokenize(tokens: &[Token]) {
 }
 
 fn print_parse(tokens: &[Token]) {
-    println!("{}", Expression::new(tokens.to_vec()));
+    let tokens = tokens
+        .iter()
+        .filter(|t| !matches!(t, Token::Space | Token::Tab | Token::Newline))
+        .cloned()
+        .collect::<Vec<Token>>();
+    let mut parser = Parser::new(tokens.to_vec());
+    parser.print_parser();
 }
